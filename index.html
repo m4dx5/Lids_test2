@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Лиды CRM</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Лиды<span>CRM</span></div>
+  <nav class="tabs">
+    <button data-view="base" class="active">База</button>
+    <button data-view="call">Прозвон</button>
+    <button data-view="stats">Статистика</button>
+    <button data-view="imports">Импорты</button>
+  </nav>
+  <div class="top-actions">
+    <button id="btnCallbacks" class="pill warn hidden" title="Перезвоны на сегодня и просроченные">Перезвоны: <b id="cbCount">0</b></button>
+    <label class="btn primary">Загрузить Excel<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple hidden></label>
+    <div class="menu">
+      <button class="btn" id="btnMenu" title="Ещё">⋯</button>
+      <div class="menu-pop" id="menuPop">
+        <button data-menu="export">Экспорт в Excel (по текущему фильтру)</button>
+        <button data-menu="backup">Сохранить резервную копию</button>
+        <button data-menu="restore">Восстановить из копии…</button>
+        <div class="menu-note" id="backupNote"></div>
+        <hr>
+        <button data-menu="clear" class="danger">Очистить всю базу</button>
+      </div>
+    </div>
+    <input type="file" id="restoreInput" accept=".json" hidden>
+  </div>
+</header>
+
+<main>
+  <!-- ============ БАЗА ============ -->
+  <section id="view-base" class="view active">
+    <div class="filters">
+      <input id="fSearch" type="search" placeholder="Поиск: название, телефон, адрес, заметка…">
+      <select id="fNiche"></select>
+      <select id="fCity"></select>
+      <select id="fSite">
+        <option value="">Сайт: любой</option>
+        <option value="yes">Есть сайт</option>
+        <option value="no">Нет сайта</option>
+      </select>
+      <select id="fCallback">
+        <option value="">Перезвоны: все</option>
+        <option value="due">Перезвонить сегодня + просроченные</option>
+        <option value="overdue">Только просроченные</option>
+      </select>
+      <select id="fImport"></select>
+      <button class="btn ghost" id="fReset">Сбросить</button>
+    </div>
+    <div id="statusChips" class="chips"></div>
+    <div class="bulkbar hidden" id="bulkbar">
+      <span>Выбрано: <b id="selCount">0</b></span>
+      <button class="btn small ghost" id="selAllFiltered"></button>
+      <select id="bulkStatus"><option value="">Поставить статус…</option></select>
+      <input id="bulkNiche" list="nicheList" placeholder="Сменить нишу…">
+      <button class="btn small" id="bulkNicheApply">Применить нишу</button>
+      <button class="btn small danger" id="bulkDelete">Удалить</button>
+      <button class="btn small ghost" id="bulkClear">Снять выделение</button>
+    </div>
+    <div class="table-wrap">
+      <table class="leads">
+        <thead>
+          <tr>
+            <th class="c-sel"><input type="checkbox" id="selPage" title="Выбрать страницу"></th>
+            <th data-sort="name">Компания</th>
+            <th data-sort="niche">Ниша</th>
+            <th>Телефоны</th>
+            <th data-sort="rating">Рейтинг</th>
+            <th>Сайт</th>
+            <th data-sort="status">Статус</th>
+            <th data-sort="last">Звонок / перезвон</th>
+            <th>Последний комментарий</th>
+          </tr>
+        </thead>
+        <tbody id="leadRows"></tbody>
+      </table>
+      <div class="empty hidden" id="baseEmpty"></div>
+    </div>
+    <div class="pager" id="pager"></div>
+  </section>
+
+  <!-- ============ ПРОЗВОН ============ -->
+  <section id="view-call" class="view">
+    <div class="call-layout">
+      <aside class="panel call-setup">
+        <h3>Очередь прозвона</h3>
+        <label class="fld">Ниша<select id="qNiche"></select></label>
+        <label class="fld">Город<select id="qCity"></select></label>
+        <label class="fld">Сайт
+          <select id="qSite">
+            <option value="">Любой</option>
+            <option value="yes">Есть сайт</option>
+            <option value="no">Нет сайта</option>
+          </select>
+        </label>
+        <div class="fld">Статусы в очереди
+          <div id="qStatuses" class="checks"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="qDueOnly" checked> «Перезвонить» — только если время уже наступило</label>
+        <button class="btn primary wide" id="qBuild">Собрать очередь</button>
+        <div class="queue-info" id="qInfo"></div>
+        <hr>
+        <label class="check"><input type="checkbox" id="qAutoNext" checked> Сразу следующая карточка после статуса</label>
+        <label class="check"><input type="checkbox" id="qSamePhone"> Ставить статус всем карточкам с тем же номером</label>
+        <div class="hotkeys">
+          <div><kbd>1</kbd>–<kbd>8</kbd> статус</div>
+          <div><kbd>→</kbd> / <kbd>Enter</kbd> следующая</div>
+          <div><kbd>←</kbd> предыдущая</div>
+          <div><kbd>C</kbd> скопировать номер</div>
+          <div>В поле ввода: <kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>8</kbd>, <kbd>Ctrl</kbd>+<kbd>Enter</kbd> — дальше</div>
+        </div>
+      </aside>
+      <section class="panel call-card" id="callCard"></section>
+    </div>
+  </section>
+
+  <!-- ============ СТАТИСТИКА ============ -->
+  <section id="view-stats" class="view"><div id="statsBody"></div></section>
+
+  <!-- ============ ИМПОРТЫ ============ -->
+  <section id="view-imports" class="view"><div id="importsBody"></div></section>
+</main>
+
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<div class="modal-back" id="modal"><div class="modal" id="modalBox"></div></div>
+<div class="toasts" id="toasts"></div>
+<datalist id="nicheList"></datalist>
+
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/qrcode.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
